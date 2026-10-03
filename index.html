@@ -1,0 +1,497 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="color-scheme" content="light dark"><style>html{padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style><title>Exam Sprint</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: sticky header with day strip, then two columns (tasks | timer). Tabs switch Today / Syllabus / Stats. */
+:root{
+  --bg:#EDEFF4; --surface:#FFFFFF; --surface2:#F5F6FA; --ink:#14213D; --muted:#5A6379; --line:#D6DBE5;
+  --accent:#2748D8; --accent-ink:#FFFFFF; --hi:#FFD84D; --hi-ink:#3A2E00; --ok:#1E8E5A; --warn:#B7791F; --bad:#C23B4E;
+  --s-daa:#2F6FDB; --s-dmdw:#1E8E5A; --s-se:#B7791F; --s-cn:#D1495B; --s-ee:#7A5AC8; --s-dos:#0E8F9C; --s-all:#5A6379;
+  --f-display:'Archivo','Arial Narrow',system-ui,sans-serif; --f-body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif; --f-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1320; --surface:#161C2B; --surface2:#1C2336; --ink:#E9EDF7; --muted:#9AA4BD; --line:#2B3450;
+  --accent:#8097FF; --accent-ink:#0E1320; --hi:#FFD84D; --hi-ink:#3A2E00; --ok:#4FD39A; --warn:#F2BE5C; --bad:#FF8A97;
+  --s-daa:#7FA8FF; --s-dmdw:#58D69A; --s-se:#F2BE5C; --s-cn:#FF8A97; --s-ee:#B79CFF; --s-dos:#4FD3E0; --s-all:#9AA4BD; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1320; --surface:#161C2B; --surface2:#1C2336; --ink:#E9EDF7; --muted:#9AA4BD; --line:#2B3450;
+  --accent:#8097FF; --accent-ink:#0E1320; --hi:#FFD84D; --hi-ink:#3A2E00; --ok:#4FD39A; --warn:#F2BE5C; --bad:#FF8A97;
+  --s-daa:#7FA8FF; --s-dmdw:#58D69A; --s-se:#F2BE5C; --s-cn:#FF8A97; --s-ee:#B79CFF; --s-dos:#4FD3E0; --s-all:#9AA4BD; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45;padding-inline:16px;padding-block:0 40px}
+.wrap{max-width:1120px;margin:0 auto}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:12px 8px;border-bottom:1px solid var(--line)}
+.top-row{display:flex;gap:12px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap}
+.brand h1{font-size:26px;font-weight:800;letter-spacing:-.01em;line-height:1}
+.brand small{display:block;color:var(--muted);margin-top:4px}
+.next{font-size:13px;color:var(--muted);text-align:right}
+.next b{color:var(--ink);font-family:var(--f-display);font-size:15px}
+.overall{display:flex;align-items:center;gap:10px;margin-top:10px}
+.bar{flex:1;height:8px;background:var(--line);border-radius:4px;overflow:hidden;min-width:0}
+.bar>i{display:block;height:100%;background:var(--accent);border-radius:4px;transition:width .3s}
+.overall span{font-family:var(--f-mono);font-size:12px;white-space:nowrap}
+.days{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:6px;margin-top:10px}
+.day{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:5px 2px 4px;text-align:center;position:relative;min-width:0}
+.day .n{font-family:var(--f-display);font-weight:800;font-size:15px;line-height:1.1}
+.day .w{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.day .m{font-size:9px;font-weight:600;letter-spacing:.05em;min-height:11px;color:var(--bad)}
+.day .fill{position:absolute;left:0;bottom:0;height:3px;background:var(--ok);border-radius:0 0 8px 8px}
+.day.today{box-shadow:0 0 0 2px var(--hi)}
+.day.sel{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.day.sel .w{color:inherit;opacity:.75}.day.sel .m{color:var(--hi)}
+.tabs{display:flex;gap:4px;margin-top:10px}
+.tab{border:0;background:transparent;padding:7px 14px;border-radius:8px;font-weight:600;color:var(--muted)}
+.tab[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 0 0 1px var(--line)}
+.sync{margin-left:auto;align-self:center;font-size:11px;color:var(--muted)}
+main{padding-top:16px}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
+.dayhead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px}
+.dayhead h2{font-size:22px;font-weight:800}
+.badge{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:99px;background:var(--hi);color:var(--hi-ink)}
+.badge.red{background:var(--bad);color:var(--bg)}
+.sub{color:var(--muted);margin:0 0 14px}
+.tasks{display:flex;flex-direction:column;gap:12px}
+.task{border:1px solid var(--line);border-radius:10px;background:var(--surface);overflow:hidden;--c:var(--s-all);border-left:4px solid var(--c)}
+.task.current{box-shadow:0 0 0 2px var(--accent)}
+.task.done .tt{text-decoration:line-through;color:var(--muted)}
+.t-head{display:flex;gap:10px;padding:12px;align-items:flex-start;background:color-mix(in srgb,var(--c) 9%,var(--surface))}
+.chk{appearance:none;width:22px;height:22px;border:2px solid var(--muted);border-radius:6px;background:var(--surface);flex:none;margin:1px 0 0;cursor:pointer;display:grid;place-content:center}
+.chk:checked{background:var(--ok);border-color:var(--ok)}
+.chk:checked::after{content:"";width:6px;height:11px;border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.t-main{flex:1;min-width:0}
+.meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--muted);margin-bottom:3px}
+.pill{font-weight:700;font-size:11px;letter-spacing:.05em;color:var(--c);text-transform:uppercase}
+.tt{font-weight:500;overflow-wrap:anywhere}
+.go{border:1px solid var(--accent);background:transparent;color:var(--accent);border-radius:8px;padding:5px 10px;font-weight:600;font-size:12px;white-space:nowrap}
+.go:hover{background:var(--accent);color:var(--accent-ink)}
+.topics{padding:8px 12px 12px;border-top:1px dashed var(--line)}
+.topics h4{margin:0 0 6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.unit-name{font-weight:600;font-size:13px;margin:8px 0 2px}
+.tl{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:2px 14px}
+.tl label{display:flex;gap:8px;align-items:flex-start;padding:3px 0;cursor:pointer;font-size:13px;min-width:0}
+.tl input{margin-top:3px;accent-color:var(--ok);flex:none}
+.tl input:checked+span{color:var(--muted);text-decoration:line-through}
+.tl span{overflow-wrap:anywhere}
+.timer{position:sticky;top:calc(env(safe-area-inset-top,0px) + 210px)}
+.t-mode{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.t-mode b{color:var(--accent)}
+.ring{position:relative;width:200px;height:200px;margin:10px auto}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .digits{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.ring .time{font-family:var(--f-mono);font-weight:600;font-size:44px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.ring .for{font-size:11px;color:var(--muted);max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--surface2);border-radius:8px;padding:8px 14px;font-weight:600}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);min-width:110px}
+.btn:hover{filter:brightness(1.06)}
+.presets{display:flex;gap:6px;justify-content:center;margin-top:12px;flex-wrap:wrap}
+.presets button{border:1px solid var(--line);background:transparent;border-radius:99px;padding:3px 10px;font-size:12px}
+.presets button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.cur{margin-top:12px;font-size:12px;color:var(--muted);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+select,input[type=number]{font:inherit;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:4px 6px}
+input[type=number]{width:58px}
+.today-min{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:baseline}
+.today-min b{font-family:var(--f-mono);font-size:20px}
+.log{margin:8px 0 0;padding:0;list-style:none;font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:2px}
+.log li{display:flex;justify-content:space-between;gap:8px}
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:4px 12px;font-weight:600;font-size:12px}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.units{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr));gap:12px}
+details.unit{border:1px solid var(--line);border-left:4px solid var(--c);border-radius:10px;background:var(--surface);--c:var(--s-all)}
+details.unit>summary{list-style:none;cursor:pointer;padding:12px;display:flex;gap:10px;align-items:center;background:color-mix(in srgb,var(--c) 9%,var(--surface));border-radius:8px}
+details.unit>summary::-webkit-details-marker{display:none}
+.u-title{flex:1;min-width:0}
+.u-title b{display:block;font-family:var(--f-display);font-weight:700}
+.u-title small{color:var(--muted)}
+.u-pct{font-family:var(--f-mono);font-size:12px}
+.u-body{padding:10px 12px 12px}
+.u-ctl{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);font-size:12px}
+.conf{display:flex;gap:3px}
+.conf button{width:26px;height:26px;border-radius:6px;border:1px solid var(--line);background:var(--surface);font-weight:600;font-size:12px}
+.conf button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.conf button.low[aria-pressed="true"]{background:var(--bad);border-color:var(--bad);color:var(--bg)}
+.pyq{display:flex;gap:6px;align-items:center;cursor:pointer}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px}
+.stat-big{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:6px}
+.stat-big div b{display:block;font-family:var(--f-mono);font-size:26px}
+.stat-big div span{font-size:12px;color:var(--muted)}
+.srow{display:grid;grid-template-columns:62px minmax(0,1fr) 78px;gap:10px;align-items:center;margin:8px 0;font-size:12px}
+.srow .bar{height:12px}
+.srow .bar>i{background:var(--c)}
+.srow span:last-child{font-family:var(--f-mono);text-align:right}
+.hm{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:6px;margin-top:8px}
+.hm div{aspect-ratio:1.3;border-radius:6px;border:1px solid var(--line);display:grid;place-content:center;font-size:11px;font-family:var(--f-mono);background:color-mix(in srgb,var(--accent) calc(var(--a,0)*70%),var(--surface))}
+.hm div.t{box-shadow:0 0 0 2px var(--hi)}
+.muted{color:var(--muted)}
+.theme{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:4px 10px;font-size:12px}
+.reset{margin-top:20px;font-size:12px;color:var(--muted)}
+.reset button{border:1px solid var(--line);background:transparent;border-radius:6px;padding:4px 10px;font-size:12px;color:var(--bad)}
+.acts{display:flex;flex-direction:column;gap:6px;align-items:stretch}
+.go.ghost{border-color:var(--line);color:var(--muted)}
+.go.ghost:hover{background:var(--surface2);color:var(--ink)}
+.mvd{color:var(--warn);font-weight:600}
+.mvmenu{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 12px;border-top:1px dashed var(--line);background:var(--surface2);font-size:12px}
+.mvmenu select{max-width:100%}
+.mvmenu .btn{padding:6px 12px}
+.pushbtn{margin:-4px 0 14px;font-size:12px;padding:6px 12px}
+@media (max-width:860px){
+  .grid{grid-template-columns:minmax(0,1fr)}
+  .timer{position:static;order:-1}
+  .days{grid-template-columns:repeat(10,minmax(0,1fr));gap:3px}
+  .day .w{display:none}.day .n{font-size:13px}
+  .next{text-align:left}
+}
+@media (max-width:420px){.days{grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}.day .w{display:block;font-size:8px}.hm{grid-template-columns:repeat(7,minmax(0,1fr))}.srow{grid-template-columns:52px minmax(0,1fr) 70px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="top-row">
+      <div class="brand"><h1>Exam Sprint</h1><small id="dateline"></small></div>
+      <div class="next" id="next"></div>
+    </div>
+    <div class="overall"><div class="bar"><i id="ovbar" style="width:0%"></i></div><span id="ovtxt"></span></div>
+    <div class="days" id="days" role="tablist" aria-label="Plan days"></div>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" data-tab="today" aria-selected="true">Today</button>
+      <button class="tab" role="tab" data-tab="syll" aria-selected="false">Syllabus</button>
+      <button class="tab" role="tab" data-tab="stats" aria-selected="false">Stats</button>
+      <span class="sync" id="sync"></span>
+    </div>
+  </header>
+
+  <main>
+    <section id="v-today" class="grid">
+      <div>
+        <div class="panel">
+          <div class="dayhead"><h2 id="dh"></h2><span id="dbadge"></span></div>
+          <p class="sub" id="dsub"></p>
+          <button class="btn pushbtn" id="push" hidden>Push unfinished</button>
+          <div class="tasks" id="tasks"></div>
+        </div>
+      </div>
+      <aside class="panel timer" aria-label="Study timer">
+        <div class="t-mode"><span>Timer</span><b id="mode">Focus</b></div>
+        <div class="ring">
+          <svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="54" fill="none" stroke="var(--line)" stroke-width="8"/><circle id="arc" cx="60" cy="60" r="54" fill="none" stroke="var(--accent)" stroke-width="8" stroke-linecap="round" stroke-dasharray="339.29" stroke-dashoffset="0"/></svg>
+          <div class="digits"><div class="time" id="time" aria-live="off">50:00</div><div class="for" id="for">Free session</div></div>
+        </div>
+        <div class="row"><button class="btn primary" id="startBtn">Start</button><button class="btn" id="resetBtn">Reset</button><button class="btn" id="skipBtn">Skip</button></div>
+        <div class="presets" id="presets"></div>
+        <div class="cur">
+          <label for="fm">Focus</label><input type="number" id="fm" min="1" max="180" value="50"><label for="bm">Break</label><input type="number" id="bm" min="1" max="60" value="10"><span>min</span>
+        </div>
+        <div class="cur" id="freeRow"><label for="freeSubj">Free session subject</label>
+          <select id="freeSubj"></select></div>
+        <div class="today-min"><span class="muted">Focused today</span><b id="tmin">0 min</b></div>
+        <ul class="log" id="log"></ul>
+      </aside>
+    </section>
+
+    <section id="v-syll" hidden>
+      <div class="filters" id="filters"></div>
+      <div class="units" id="units"></div>
+    </section>
+
+    <section id="v-stats" hidden>
+      <div class="stats">
+        <div class="panel"><h3>Focus time</h3>
+          <div class="stat-big" id="bigstats"></div>
+          <div id="subjbars"></div></div>
+        <div class="panel"><h3>Syllabus covered</h3><div id="sylbars"></div></div>
+        <div class="panel" style="grid-column:1/-1"><h3>Minutes per day</h3><div class="hm" id="hm"></div></div>
+      </div>
+      <div class="reset"><button id="wipe">Reset all progress</button> <span id="wipeNote"></span></div>
+    </section>
+  </main>
+</div>
+
+<script>
+/* ---------- DATA ---------- */
+const SUBJ={DAA:'Algorithms',DMDW:'Data Mining',SE:'Software Eng.',CN:'Networks',EE:'Eng. Economics',DOS:'Distributed OS',ALL:'General'};
+const FULL={DAA:'Design & Analysis of Algorithms',DMDW:'Data Mining & Data Warehousing',SE:'Software Engineering',CN:'Computer Networks',EE:'Engineering Economics',DOS:'Distributed Operating Systems'};
+const UNITS=[
+['daa1','DAA','U1 Introduction','Lectures 1-8',['Algorithm analysis and design: motivation','Space and time complexity; insertion sort by step count','Growth of functions; Big-O, Omega, Theta','Recurrences: iterative and substitution methods','Recurrences: recurrence tree method','Recurrences: Master theorem, change of variable']],
+['daa2','DAA','U2a Divide and Conquer','Lectures 9-12',['Structure of divide-and-conquer; run-time recurrences','Finding max and min','Binary search','Merge sort','Quick sort']],
+['daa3','DAA','U2b Greedy Approach','Lectures 13-19',['Heap: build, insert, delete, complexity','Greedy paradigm overview','Fractional knapsack','Job sequencing with deadlines','Huffman optimal coding','Kruskal minimum spanning tree','Prim minimum spanning tree','Dijkstra single-pair shortest path']],
+['daa4','DAA','U3 Dynamic Programming','Lectures 20-28',['DP vs divide-and-conquer vs greedy','Matrix chain multiplication','Longest common subsequence','0/1 knapsack','Multistage graph','Floyd-Warshall all-pairs shortest paths','Optimal binary search tree']],
+['daa5','DAA','U4 Amortized and Randomized','Lectures 29-34',['Amortized analysis: aggregate method','Amortized analysis: accounting method','Las Vegas and Monte Carlo algorithms','Randomized quick sort and average-case analysis']],
+['daa6','DAA','U5 Complexity Classes and Approximation','Lectures 35-40',['P, NP, NP-hard, NP-complete','Reducibility of problems','Vertex cover','3-CNF satisfiability','Maximal clique','Hamiltonian cycle','Approximation algorithms: travelling salesman']],
+['dm1','DMDW','U1 Intro and Preprocessing','Days 1-9',['Data mining intro, evolution of databases, data types','KDD process and data mining techniques','Issues, applications; data objects and attribute types','Statistical description of data and visualization','Data cleaning: noisy and missing values','Data integration: correlation (Pearson, chi-square)','Data reduction and transformation; normalization','Sampling, discretization, concept hierarchy generation']],
+['dm2','DMDW','U2 Warehousing and OLAP','Lectures 10-15',['Basic concepts and warehouse architecture','Multidimensional model: cubes, star, snowflake, fact constellation','Schema for decision support; building a warehouse','Concept hierarchies, OLAP characteristics, OLTP vs OLAP']],
+['dm3','DMDW','U3 Frequent Pattern Analysis','Lectures 16-21',['Market basket analysis; Apriori with candidate generation','Generating association rules','Improving Apriori efficiency','FP-growth (without candidate generation)','Measuring rule quality; correlation analysis']],
+['dm4','DMDW','U4 Classification and Prediction','Lectures 22-33',['Issues; rule-based classification','Decision tree (ID3 only)','Naive Bayesian classification (discrete data)','Back propagation','Support vector machines (linear only)','K-NN; genetic algorithms (steps only)','Simple linear regression','Confusion matrix, accuracy, precision, recall; MSE, RMSE, MAPE, MAE']],
+['dm5','DMDW','U5 Clustering','Lectures 34-40',['Data types, similarity and dissimilarity measures','Categories of clustering; K-Means, K-Medoids','Hierarchical: agglomerative, divisive intro','DBSCAN; grid-based; model-based; high-dimensional clustering']],
+['se1','SE','U1 Intro and Process Models','Module 1',['Software, characteristics, role of a software engineer','Software crisis; engineering vs conventional processes; quality attributes','Classical and iterative waterfall','Prototyping, evolutionary, spiral, RAD','Agile: essential idea, agile vs others, XP, Scrum']],
+['se2','SE','U2 Requirements and Design','Module 2',['Elicitation, analysis, documentation, review, management','Feasibility study, information modeling','Data flow diagrams, ER diagrams','Decision tables; SRS and IEEE standard','Architecture, component-level, UI and WebApp design']],
+['se3','SE','U3 Quality and SQA','Module 3',['Verification and validation','SQA plans and quality frameworks','ISO 9000 models','SEI-CMM and People CMM']],
+['se4','SE','U4 Testing','Module 4',['Testing objectives; unit, integration, acceptance, regression','Top-down and bottom-up; test drivers and stubs','White box (structural) testing','Black box (functional) testing','OO and web application testing; formal verification','Software configuration management; product metrics']],
+['se5','SE','U5 Project Management','Module 5',['Project management concepts; process and project metrics','Estimation for software projects (FP, COCOMO)','Project scheduling','Risk management','Maintenance and re-engineering']],
+['cn1','CN','U1 Data Communications and Models','Lectures 1-6',['Intro to networks; analog and digital signals','Data transmission and multiplexing','Data encoding techniques','Packet vs circuit switching','Network topologies','ISO/OSI and TCP/IP models']],
+['cn2','CN','U2 Physical and Data Link','Lectures 36-40',['Transmission media','Data link layer','Error detection: parity, LRC, CRC','Hamming code','Ethernet frame format']],
+['cn3','CN','U3 Network Layer','Lectures 24-35',['Network layer services; IPv4 datagram format','IP addressing; subnetting and supernetting','DHCP, ICMP, NAT, ARP, RARP','Routing: link state, distance vector, path vector','Routing protocols: OSPF, RIP']],
+['cn4','CN','U4 Transport Layer','Lectures 12-23',['Transport services; multiplexing/demultiplexing','Flow control: stop-and-wait, Go-Back-N, Selective Repeat','UDP: services and segment format','TCP: segment format, connection management, state diagram','TCP windows and flow control','Congestion control: slow start, avoidance, fast recovery','Quality of service']],
+['cn5','CN','U5 Application Layer','Lectures 7-11',['DNS','Electronic mail','HTTP and WWW','Delay and throughput in packet-switched networks']],
+['ee1','EE','U1 Demand, Supply, Revenue','Lectures 1-10',['Intro to economics and engineering economics','Demand: determinants, law, shifts','Supply and market equilibrium (with indirect taxes)','Indifference curve, budget line, consumer equilibrium','Income and substitution effect (Hicksian)','Elasticity: price, income, cross','Demand forecasting: least squares','Revenue: TR, AR, MR and elasticity']],
+['ee2','EE','U2 Production, Cost, Markets','Lectures 22-33',['Production function; law of variable proportion','Returns to scale, isoquants, Cobb-Douglas','Producer equilibrium','Cost concepts and cost curves','Break-even analysis, margin of safety, P/V ratio','Perfect competition','Monopoly']],
+['ee3','EE','U3 Time Value of Money','Lectures 11-15',['Interest formulae (seven) and cash flow diagrams','Effective interest rate','Present worth method (equal and unequal lives)','Future worth method','Annual equivalent method']],
+['ee4','EE','U4 Appraisal and Depreciation','Lectures 16-21',['Pay-back period','Net present value','Internal rate of return vs MARR','Cost-benefit analysis','Straight line and declining balance depreciation','Sum-of-years digit and sinking fund depreciation']],
+['ee5','EE','U5 Macroeconomic Policy','Lectures 34-36',['Central bank functions','Commercial bank functions and credit creation','Inflation: types, causes, control','Business cycle phases']],
+['do1','DOS','U1 Fundamentals','Unit I',['Intro and goals of distributed systems','Hardware concepts','Software concepts; design issues','Network OS, true distributed system, time-sharing multiprocessor OS','System architectures']],
+['do2','DOS','U2 Communication','Unit II',['Basics of communication; layered protocols','ATM models','Client-server model','Blocking vs non-blocking primitives','Buffered vs unbuffered, reliable vs unreliable primitives','Message passing','Remote procedure call']],
+['do3','DOS','U3 Synchronization and Processes','Unit III',['Clock synchronization','Mutual exclusion','Election algorithms','Atomic transactions','Deadlock in distributed systems','Processes and threads','System models, processor allocation, scheduling']],
+['do4','DOS','U4 Consistency, Replication, Fault Tolerance','Unit IV',['Data-centric consistency models','Client-centric consistency models','Replica management; consistency protocols','Fault tolerance; process resilience','Distributed commit','Reliable client-server communication']],
+['do5','DOS','U5 Distributed Shared Memory','Unit V',['Architecture, algorithms, protocols','Design issues, consistency model','Page-based distributed shared memory','Shared-variable DSM','Object-based DSM']],
+['lab1','DAA','Lab list: DAA programs','Practice list. Edit to match your lab manual',['Merge sort','Quick sort','Binary search','Max-min','Fractional knapsack','Job sequencing','Huffman coding','Kruskal and Prim','Dijkstra','0/1 knapsack','LCS','Matrix chain multiplication','Floyd-Warshall']],
+['lab2','CN','Lab list: CN experiments','Practice list. Edit to match your lab manual',['Parity and LRC','CRC','Hamming code','Stop-and-wait and sliding window','Subnetting and IP classes','Distance vector routing','Link state routing','Socket programming (TCP/UDP)']]
+];
+const UM={};UNITS.forEach(u=>UM[u[0]]={id:u[0],s:u[1],name:u[2],note:u[3],topics:u[4]});
+/* day, slot, subject, text, type, hours, [unit ids] */
+const T=[
+[1,'Evening','DAA','Unit 1: asymptotics, step count, solving recurrences','Study',2,['daa1']],
+[1,'Night','DAA','Lab: write and run merge sort, quick sort, binary search, max-min from memory','Lab prep',1.5,['lab1']],
+[2,'Morning','DAA','Unit 2a: Divide and Conquer, then PYQs','Study',2.5,['daa2']],
+[2,'Afternoon','DAA','Unit 2b: Greedy, then PYQs','Study',2.5,['daa3']],
+[2,'Evening','DAA','Lab: code knapsack, job sequencing, Prim/Kruskal/Dijkstra','Lab prep',2,['lab1']],
+[3,'Morning','DAA','Unit 3: Dynamic Programming, then PYQs','Study',3,['daa4']],
+[3,'Afternoon','CN','CN lab prep: go through the lab manual experiments','Lab prep',2,['lab2']],
+[3,'Evening','DAA','Lab: code 0/1 knapsack, LCS, MCM; one timed 45-minute mock','Lab prep',2,['lab1']],
+[4,'Morning','DAA','Lab: rewrite ALL programs from memory; note viva questions and complexities','Lab prep',3,['lab1']],
+[4,'Afternoon','CN','Physical and Data Link layer theory','Study',2.5,['cn2']],
+[4,'Evening','CN','CN lab: practise 2 experiments end to end, timed','Lab prep',1.5,['lab2']],
+[5,'Morning','DAA','Skim program list and complexities (max 1 hour), then DAA LAB TEST','LAB TEST',3,['lab1']],
+[5,'Evening','DAA','Unit 4: Amortized and Randomized (light session)','Study',2,['daa5']],
+[5,'Night','CN','CN lab: run each manual experiment once','Lab prep',1.5,['lab2']],
+[6,'Morning','CN','CN lab: timed mock and viva prep (OSI vs TCP/IP, IP classes, ARP/RARP/DHCP)','Lab prep',3,['lab2']],
+[6,'Afternoon','CN','Network layer theory','Study',3,['cn3']],
+[6,'Evening','CN','CN lab: final dry run of the 3 most likely experiments','Lab prep',1.5,['lab2']],
+[7,'Morning','CN','Skim lab notes (max 1 hour), then CN LAB TEST','LAB TEST',3,['lab2']],
+[7,'Afternoon','CN','Transport layer: UDP, TCP, flow and congestion control, QoS','Study',2.5,['cn4']],
+[7,'Evening','CN','Data communications and Application layer, then CN PYQs','Study',2,['cn1','cn5']],
+[8,'Morning','SE','Unit 1 and process models, then PYQs','Study',3,['se1']],
+[8,'Afternoon','SE','Unit 2: requirements and design','Study',3,['se2']],
+[8,'Evening','SE','Unit 3: quality and SQA','Study',2,['se3']],
+[9,'Morning','SE','Unit 4: testing, plus cyclomatic complexity numericals','Study',3,['se4']],
+[9,'Afternoon','SE','Unit 5: project management, plus COCOMO and FP numericals','Study',3,['se5']],
+[9,'Evening','SE','SE PYQs: solve 2 full papers','PYQ',2,[]],
+[10,'Morning','EE','Unit 1: demand, supply, elasticity, revenue, forecasting numericals','Study',3,['ee1']],
+[10,'Afternoon','EE','Unit 3: time value of money and comparison methods','Study',3,['ee3']],
+[10,'Evening','EE','EE PYQs: unit 1 and unit 3 numericals','PYQ',2,[]],
+[11,'Morning','EE','Unit 4: NPV, IRR, CBA, depreciation','Study',3,['ee4']],
+[11,'Afternoon','EE','Unit 2 (production, cost, markets) and Unit 5 (banking, inflation, business cycle)','Study',3.5,['ee2','ee5']],
+[11,'Evening','ALL','Make a 1-page formula and diagram sheet (EE, SE, DAA) for the trip. Pack bags.','Revise',1.5,[]],
+[12,'Travel','ALL','Travel day: flip through the formula sheet only. No new topics.','Travel',1.5,[]],
+[13,'Morning','DMDW','Unit 1: intro and preprocessing numericals','Study',3,['dm1']],
+[13,'Afternoon','DMDW','Unit 2: warehousing and OLAP','Study',2.5,['dm2']],
+[13,'Evening','DMDW','DMDW PYQs: unit 1 and unit 2','PYQ',2,[]],
+[14,'Morning','DMDW','Unit 3: Apriori and FP-growth, 3 numericals each','Study',3,['dm3']],
+[14,'Afternoon','DMDW','Unit 4: classification and prediction','Study',3,['dm4']],
+[14,'Evening','DMDW','DMDW PYQs: unit 3 and unit 4 numericals','PYQ',2,[]],
+[15,'Morning','DMDW','Unit 5: clustering','Study',3,['dm5']],
+[15,'Afternoon','DOS','Unit 1 and Unit 2','Study',3.5,['do1','do2']],
+[15,'Evening','DMDW','DMDW PYQs: clustering plus 1 full paper','PYQ',2,[]],
+[16,'Morning','DOS','Unit 3: synchronization and processes','Study',3.5,['do3']],
+[16,'Afternoon','DOS','Unit 4: consistency, replication, fault tolerance','Study',3,['do4']],
+[16,'Evening','DOS','Unit 5: distributed shared memory, then DOS PYQs','Study',2.5,['do5']],
+[17,'Morning','DAA','Unit 5: complexity classes and approximation; revise Units 1-4','Study',3,['daa6']],
+[17,'Afternoon','DAA','DAA PYQs: 2 full papers, timed','PYQ',3,[]],
+[17,'Evening','DOS','DOS PYQs: 1 full paper plus weak topics','PYQ',2,[]],
+[18,'Morning','CN','CN PYQs: 2 full papers, timed','PYQ',3,[]],
+[18,'Afternoon','SE','SE PYQs: 2 full papers, timed','PYQ',3,[]],
+[18,'Evening','EE','EE PYQs: numerical paper, redo the wrong ones','PYQ',2,[]],
+[19,'Morning','DMDW','DMDW PYQs: full paper, timed','PYQ',3,[]],
+[19,'Afternoon','DOS','DOS PYQs: full paper, timed','PYQ',3,[]],
+[19,'Evening','DAA','DAA PYQs: recurrences and DP numericals','PYQ',2,[]],
+[20,'Morning','ALL','Backlog catch-up: finish any task still unticked','Buffer',3,[]],
+[20,'Afternoon','ALL','Revisit every topic rated 1-2 in Syllabus; redo wrong PYQs','Revise',3,[]],
+[20,'Evening','ALL','Final formula-sheet revision; plan the November round','Revise',1.5,[]]
+].map((r,i)=>({id:'t'+(i+1),day:r[0],slot:r[1],s:r[2],text:r[3],type:r[4],h:r[5],units:r[6]}));
+const DAYNOTE={1:['Short day','Starts in the afternoon. Get the DAA lab programs going early.'],5:['DAA lab test','Skim in the morning, then sit the test. Light theory after.'],7:['CN lab test','Skim in the morning, then sit the test. Theory after.'],12:['Travel day','Formula sheet only. No new topics.'],20:['Final day','Backlog, weak topics, formula sheets.']};
+const MILES=[['DAA lab test',new Date(2026,9,7)],['CN lab test',new Date(2026,9,9)],['Travel day',new Date(2026,9,14)],['Plan ends',new Date(2026,9,22)],['End-sem starts',new Date(2026,10,9)]];
+const START=new Date(2026,9,3);
+const dayDate=n=>new Date(2026,9,2+n);
+const WD=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const fmt=d=>WD[d.getDay()]+' '+d.getDate()+' '+MO[d.getMonth()];
+const ymd=d=>d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+const midnight=d=>new Date(d.getFullYear(),d.getMonth(),d.getDate());
+const todayIdx=()=>{const n=Math.round((midnight(new Date())-START)/864e5)+1;return Math.max(1,Math.min(20,n));};
+const rel=()=>Math.round((midnight(new Date())-START)/864e5)+1;
+
+/* ---------- STATE ---------- */
+const KEY='examSprintV1';
+let S={done:{},tp:{},pyq:{},conf:{},log:[],moved:{},slots:{},set:{focus:50,brk:10},ts:0};
+let sel=todayIdx(),tab='today',fsubj='ALL';
+const openU=new Set();
+let dbRef=null,syncMsg='Saved on this device';
+try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);if(o&&o.ts)S=Object.assign(S,o);}}catch(e){}
+let wt=null;
+function save(){S.ts=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}
+  if(dbRef){clearTimeout(wt);wt=setTimeout(()=>{dbRef.set(JSON.parse(JSON.stringify(S))).then(()=>{syncMsg='Synced to your account';paintSync();}).catch(()=>{syncMsg='Saved on this device';paintSync();});},700);}}
+function paintSync(){const e=document.getElementById('sync');if(e)e.textContent=syncMsg;}
+function readSnap(s){try{const d=typeof s.data==='function'?s.data():s.data;return d&&d.ts?d:null;}catch(e){return null;}}
+(async()=>{try{
+  if(!window.claude||!window.claude.use)return;
+  const [user,db]=await Promise.all([window.claude.use('user'),window.claude.use('db')]);
+  if(!user||!db)return;
+  const id=await user.id();
+  const ref=db.doc('data/users/'+id+'/state');
+  const snap=await ref.get();const r=readSnap(snap);
+  if(r&&r.ts>S.ts){S=Object.assign(S,r);try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}renderAll();}
+  dbRef=ref;
+  if(!r||S.ts>r.ts){ref.set(JSON.parse(JSON.stringify(S))).catch(()=>{});}
+  syncMsg='Synced to your account';paintSync();
+  ref.onSnapshot(s=>{const x=readSnap(s);if(x&&x.ts>S.ts){S=Object.assign(S,x);try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}renderAll();}},()=>{});
+}catch(e){}})();
+
+/* ---------- HELPERS ---------- */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const col=s=>'var(--s-'+(s==='ALL'?'all':s.toLowerCase())+')';
+const unitDone=u=>UM[u].topics.filter((_,i)=>S.tp[u+':'+i]).length;
+const unitPct=u=>Math.round(100*unitDone(u)/UM[u].topics.length);
+const SO={Morning:0,Afternoon:1,Evening:2,Night:3,Travel:1};
+const SLOTS=['Morning','Afternoon','Evening','Night'];
+const effDay=t=>(S.moved&&S.moved[t.id])||t.day;
+const slotOf=t=>(S.slots&&S.slots[t.id])||t.slot;
+let moveOpen=null;
+const dayTasks=d=>T.filter(t=>effDay(t)===d).sort((a,b)=>(SO[slotOf(a)]-SO[slotOf(b)])||(T.indexOf(a)-T.indexOf(b)));
+const dayPct=d=>{const a=dayTasks(d);return a.length?a.filter(t=>S.done[t.id]).length/a.length:0;};
+const mins=m=>m>=60?Math.floor(m/60)+'h '+(m%60)+'m':m+' min';
+const logOf=d=>S.log.filter(l=>l.d===ymd(dayDate(d)));
+const logMin=a=>a.reduce((x,l)=>x+l.m,0);
+
+/* ---------- RENDER ---------- */
+function renderHeader(){
+  const n=rel();
+  $('dateline').textContent=fmt(new Date())+(n<1?' · starts 3 Oct':n>20?' · plan finished':' · Day '+n+' of 20');
+  const done=T.filter(t=>S.done[t.id]).length;
+  $('ovbar').style.width=(100*done/T.length)+'%';
+  $('ovtxt').textContent=done+' / '+T.length+' tasks';
+  const nowM=midnight(new Date());
+  const nx=MILES.find(m=>m[1]>=nowM);
+  $('next').innerHTML=nx?('Next: <b>'+nx[0]+'</b> in '+Math.round((nx[1]-nowM)/864e5)+' days ('+fmt(nx[1])+')'):'All milestones passed';
+  const t=todayIdx();
+  $('days').innerHTML=Array.from({length:20},(_,i)=>{const d=i+1,dt=dayDate(d),note=DAYNOTE[d];
+    const mk=d===5||d===7?'LAB':d===12?'TRIP':'';
+    return '<button class="day'+(d===sel?' sel':'')+(d===t&&n>=1&&n<=20?' today':'')+'" data-day="'+d+'" role="tab" aria-selected="'+(d===sel)+'" aria-label="Day '+d+', '+fmt(dt)+'"><div class="w">'+WD[dt.getDay()]+'</div><div class="n">'+dt.getDate()+'</div><div class="m">'+mk+'</div><div class="fill" style="width:'+(100*dayPct(d))+'%"></div></button>';}).join('');
+}
+function topicList(ids){
+  return ids.map(u=>{const x=UM[u];return '<div class="unit-name" style="color:'+col(x.s)+'">'+esc(x.name)+' <span class="muted" style="font-weight:400">· '+esc(x.note)+'</span></div><ul class="tl">'+x.topics.map((tp,i)=>'<li><label><input type="checkbox" data-tp="'+u+':'+i+'"'+(S.tp[u+':'+i]?' checked':'')+'><span>'+esc(tp)+'</span></label></li>').join('')+'</ul>';}).join('');
+}
+function moveMenu(t){
+  const cd=effDay(t),cs=slotOf(t);
+  const opts=Array.from({length:20},(_,i)=>{const d=i+1;const n=dayTasks(d).length;return '<option value="'+d+'"'+(d===cd?' selected':'')+'>Day '+d+' · '+fmt(dayDate(d))+' ('+n+' tasks)</option>';}).join('');
+  const sl=SLOTS.map(x=>'<option'+(x===cs||(cs==='Travel'&&x==='Afternoon')?' selected':'')+'>'+x+'</option>').join('');
+  return '<div class="mvmenu"><label for="mvday">Move to</label><select id="mvday">'+opts+'</select><label for="mvslot">Slot</label><select id="mvslot">'+sl+'</select><button class="btn primary" data-domove="'+t.id+'">Move</button>'+(effDay(t)!==t.day||S.slots[t.id]?'<button class="btn" data-unmove="'+t.id+'">Back to original</button>':'')+'<button class="btn" data-cancelmove="1">Cancel</button></div>';
+}
+function renderToday(){
+  const d=sel,dt=dayDate(d),note=DAYNOTE[d],tasks=dayTasks(d);
+  $('dh').textContent='Day '+d+' · '+fmt(dt);
+  $('dbadge').innerHTML=note?'<span class="badge'+(d===5||d===7||d===12?' red':'')+'">'+note[0]+'</span>':'';
+  const hrs=tasks.reduce((a,t)=>a+t.h,0),dn=tasks.filter(t=>S.done[t.id]).length;
+  const rn=rel();
+  $('dsub').textContent=(note?note[1]+' ':'')+dn+' of '+tasks.length+' tasks done · '+hrs+' h planned'+(d===todayIdx()&&rn>=1&&rn<=20?' · today':'');
+  const unf=tasks.filter(t=>!S.done[t.id]).length;
+  $('push').hidden=!(d<20&&unf>0);
+  $('push').textContent='Push '+unf+' unfinished to Day '+(d+1);
+  $('push').dataset.push=d;
+  $('tasks').innerHTML=tasks.length?tasks.map(t=>{
+    const lab=t.units.some(u=>u.startsWith('lab'));
+    return '<article class="task'+(S.done[t.id]?' done':'')+(T_cur===t.id?' current':'')+'" style="--c:'+col(t.s)+'"><div class="t-head"><input class="chk" type="checkbox" data-task="'+t.id+'" aria-label="Mark task done"'+(S.done[t.id]?' checked':'')+'><div class="t-main"><div class="meta"><span class="pill">'+t.s+'</span><span>'+slotOf(t)+'</span><span>'+t.h+' h</span><span>'+t.type+'</span>'+(effDay(t)!==t.day?'<span class="mvd">moved from Day '+t.day+'</span>':'')+'</div><div class="tt">'+esc(t.text)+'</div></div><div class="acts"><button class="go" data-go="'+t.id+'">Start timer</button><button class="go ghost" data-move="'+t.id+'" aria-expanded="'+(moveOpen===t.id)+'">Move</button></div></div>'+(moveOpen===t.id?moveMenu(t):'')+''+
+    (t.units.length?'<div class="topics"><h4>'+(lab?'Practice list':'Topics to cover (from your syllabus)')+'</h4>'+topicList(t.units)+'</div>':'')+'</article>';}).join(''):'<p class="muted">No tasks on this day. Use Move on another day\'s task to bring one here.</p>';
+}
+function renderSyll(){
+  const f=['ALL','DAA','DMDW','SE','CN','EE','DOS'];
+  $('filters').innerHTML=f.map(s=>'<button class="chip" data-f="'+s+'" aria-pressed="'+(fsubj===s)+'">'+(s==='ALL'?'All subjects':s)+'</button>').join('');
+  $('units').innerHTML=UNITS.filter(u=>fsubj==='ALL'||u[1]===fsubj).map(u=>{const x=UM[u[0]],id=x.id,c=S.conf[id]||0;
+    return '<details class="unit" data-u="'+id+'" style="--c:'+col(x.s)+'"'+(openU.has(id)?' open':'')+'><summary><div class="u-title"><b>'+esc(x.name)+'</b><small>'+x.s+' · '+esc(x.note)+'</small></div><span class="u-pct">'+unitDone(id)+'/'+x.topics.length+'</span></summary><div class="u-body"><ul class="tl">'+x.topics.map((tp,i)=>'<li><label><input type="checkbox" data-tp="'+id+':'+i+'"'+(S.tp[id+':'+i]?' checked':'')+'><span>'+esc(tp)+'</span></label></li>').join('')+'</ul><div class="u-ctl"><label class="pyq"><input type="checkbox" data-pyq="'+id+'"'+(S.pyq[id]?' checked':'')+'> PYQs solved</label><span>Confidence</span><div class="conf">'+[1,2,3,4,5].map(n=>'<button data-conf="'+id+':'+n+'" class="'+(n<=2?'low':'')+'" aria-pressed="'+(c===n)+'" aria-label="Confidence '+n+'">'+n+'</button>').join('')+'</div></div></div></details>';}).join('');
+}
+function renderStats(){
+  const tot=logMin(S.log),td=logMin(logOf(Math.max(1,Math.min(20,rel()))));
+  const sessions=S.log.length;
+  $('bigstats').innerHTML='<div><b>'+mins(tot)+'</b><span>all time</span></div><div><b>'+mins(rel()>=1&&rel()<=20?td:0)+'</b><span>today</span></div><div><b>'+sessions+'</b><span>sessions</span></div>';
+  const by={};S.log.forEach(l=>by[l.s]=(by[l.s]||0)+l.m);
+  const mx=Math.max(60,...Object.values(by));
+  $('subjbars').innerHTML=['DAA','DMDW','SE','CN','EE','DOS','ALL'].map(s=>'<div class="srow" style="--c:'+col(s)+'"><span>'+s+'</span><div class="bar"><i style="width:'+(100*(by[s]||0)/mx)+'%"></i></div><span>'+mins(by[s]||0)+'</span></div>').join('');
+  $('sylbars').innerHTML=['DAA','DMDW','SE','CN','EE','DOS'].map(s=>{const us=UNITS.filter(u=>u[1]===s&&!u[0].startsWith('lab')).map(u=>u[0]);const all=us.reduce((a,u)=>a+UM[u].topics.length,0),dn=us.reduce((a,u)=>a+unitDone(u),0),p=Math.round(100*dn/all);
+    const pq=us.filter(u=>S.pyq[u]).length;
+    return '<div class="srow" style="--c:'+col(s)+'"><span>'+s+'</span><div class="bar"><i style="width:'+p+'%"></i></div><span>'+p+'%</span></div><div class="muted" style="font-size:11px;margin:-4px 0 6px 72px">'+dn+'/'+all+' topics · PYQs '+pq+'/'+us.length+' units</div>';}).join('');
+  const per=Array.from({length:20},(_,i)=>logMin(logOf(i+1)));const m=Math.max(60,...per);
+  $('hm').innerHTML=per.map((v,i)=>'<div style="--a:'+(v/m)+'" class="'+(i+1===todayIdx()?'t':'')+'" title="Day '+(i+1)+': '+v+' min">'+(i+1)+'</div>').join('');
+}
+function renderAll(){renderHeader();if(tab==='today')renderToday();if(tab==='syll')renderSyll();if(tab==='stats')renderStats();renderTimerLog();}
+function setTab(t){tab=t;['today','syll','stats'].forEach(k=>{$('v-'+k).hidden=k!==t;});document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===t));renderAll();}
+
+/* ---------- EVENTS ---------- */
+document.addEventListener('change',e=>{const t=e.target;
+  if(t.dataset.task){S.done[t.dataset.task]=t.checked?1:0;if(!t.checked)delete S.done[t.dataset.task];save();renderAll();}
+  else if(t.dataset.tp){if(t.checked)S.tp[t.dataset.tp]=1;else delete S.tp[t.dataset.tp];save();renderAll();}
+  else if(t.dataset.pyq){if(t.checked)S.pyq[t.dataset.pyq]=1;else delete S.pyq[t.dataset.pyq];save();renderAll();}
+});
+document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.day){sel=+b.dataset.day;setTab('today');}
+  else if(b.dataset.tab)setTab(b.dataset.tab);
+  else if(b.dataset.f){fsubj=b.dataset.f;renderSyll();}
+  else if(b.dataset.conf){const [u,n]=b.dataset.conf.split(':');S.conf[u]=S.conf[u]===+n?0:+n;if(!S.conf[u])delete S.conf[u];save();renderSyll();}
+  else if(b.dataset.move){moveOpen=moveOpen===b.dataset.move?null:b.dataset.move;renderToday();}
+  else if(b.dataset.cancelmove){moveOpen=null;renderToday();}
+  else if(b.dataset.domove){const id=b.dataset.domove,t=T.find(x=>x.id===id),d=+$('mvday').value,sl=$('mvslot').value;
+    if(d===t.day)delete S.moved[id];else S.moved[id]=d;
+    if(sl===t.slot||(t.slot==='Travel'&&sl==='Afternoon'))delete S.slots[id];else S.slots[id]=sl;
+    moveOpen=null;save();sel=d;renderAll();}
+  else if(b.dataset.unmove){const id=b.dataset.unmove;delete S.moved[id];delete S.slots[id];moveOpen=null;save();renderAll();}
+  else if(b.id==='push'){const d=+b.dataset.push;dayTasks(d).filter(t=>!S.done[t.id]).forEach(t=>{S.moved[t.id]=d+1;});save();moveOpen=null;sel=d+1;renderAll();}
+  else if(b.dataset.go){T_cur=b.dataset.go;const t=T.find(x=>x.id===T_cur);setMode('focus');renderToday();if(!tm.running)startTimer();window.scrollTo({top:0,behavior:'smooth'});}
+});
+document.addEventListener('toggle',e=>{const d=e.target;if(d.matches&&d.matches('details.unit')){if(d.open)openU.add(d.dataset.u);else openU.delete(d.dataset.u);}},true);
+
+/* ---------- TIMER ---------- */
+let T_cur=null;
+const tm={mode:'focus',running:false,endAt:0,left:S.set.focus*60000,total:S.set.focus*60000,startedAt:0};
+let audio=null,wake=null,iv=null;
+const PRE=[[25,5],[50,10],[90,20]];
+function curSubj(){const t=T.find(x=>x.id===T_cur);return t?t.s:$('freeSubj').value;}
+function setMode(m){tm.mode=m;tm.running=false;const mins=m==='focus'?S.set.focus:S.set.brk;tm.total=tm.left=mins*60000;paintTimer();paintBtns();}
+function beep(){try{audio=audio||new (window.AudioContext||window.webkitAudioContext)();[0,0.25,0.5].forEach(o=>{const os=audio.createOscillator(),g=audio.createGain();os.frequency.value=o===0.5?988:784;os.connect(g);g.connect(audio.destination);const t=audio.currentTime+o;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.25,t+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t+0.22);os.start(t);os.stop(t+0.25);});}catch(e){}}
+async function lock(on){try{if(on&&navigator.wakeLock){wake=await navigator.wakeLock.request('screen');}else if(wake){await wake.release();wake=null;}}catch(e){}}
+function startTimer(){try{audio=audio||new (window.AudioContext||window.webkitAudioContext)();audio.resume&&audio.resume();}catch(e){}
+  tm.running=true;tm.endAt=Date.now()+tm.left;tm.startedAt=tm.startedAt||Date.now();clearInterval(iv);iv=setInterval(tick,250);lock(true);paintBtns();paintTimer();}
+function pauseTimer(){tm.left=Math.max(0,tm.endAt-Date.now());tm.running=false;clearInterval(iv);lock(false);paintBtns();paintTimer();}
+function logSession(msElapsed){const m=Math.round(msElapsed/60000);if(tm.mode!=='focus'||m<1)return;S.log.push({d:ymd(new Date()),s:curSubj(),m,t:T_cur||'',at:Date.now()});save();renderAll();}
+function tick(){const left=tm.endAt-Date.now();if(left<=0){clearInterval(iv);tm.running=false;tm.left=0;beep();lock(false);const el=tm.total;logSession(el);const next=tm.mode==='focus'?'brk':'focus';tm.startedAt=0;setMode(tm.mode==='focus'?'break':'focus');$('mode').textContent=tm.mode==='focus'?'Focus':'Break';return;}
+  tm.left=left;paintTimer();}
+function resetTimer(){const elapsed=tm.total-(tm.running?Math.max(0,tm.endAt-Date.now()):tm.left);clearInterval(iv);if(tm.mode==='focus'&&elapsed>=60000)logSession(elapsed);lock(false);tm.startedAt=0;setMode(tm.mode);}
+function paintTimer(){const l=tm.running?Math.max(0,tm.endAt-Date.now()):tm.left;const s=Math.ceil(l/1000);$('time').textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+  $('arc').style.strokeDashoffset=339.29*(1-(tm.total?l/tm.total:0))*-1+0;$('arc').setAttribute('stroke-dashoffset',339.29*(1-(tm.total?l/tm.total:0)));
+  $('mode').textContent=tm.mode==='focus'?'Focus':'Break';
+  const t=T.find(x=>x.id===T_cur);$('for').textContent=tm.mode==='break'?'Rest your eyes':(t?t.s+': '+t.text:'Free session');$('for').title=t?t.text:'';
+  $('freeRow').hidden=!!t&&tm.mode==='focus';}
+function paintBtns(){$('startBtn').textContent=tm.running?'Pause':(tm.left<tm.total?'Resume':'Start');
+  $('presets').innerHTML=PRE.map(p=>'<button data-pre="'+p[0]+'" aria-pressed="'+(S.set.focus===p[0]&&S.set.brk===p[1])+'">'+p[0]+' / '+p[1]+'</button>').join('')+(T_cur?'<button data-clear="1">Free session</button>':'');}
+function renderTimerLog(){const a=logOf(Math.max(1,Math.min(20,rel()))).slice(-4).reverse();const live=rel()>=1&&rel()<=20;
+  $('tmin').textContent=mins(live?logMin(logOf(rel())):0);
+  $('log').innerHTML=live?a.map(l=>'<li><span>'+esc(l.s)+'</span><span>'+l.m+' min</span></li>').join(''):'';}
+$('startBtn').onclick=()=>tm.running?pauseTimer():startTimer();
+$('resetBtn').onclick=resetTimer;
+$('skipBtn').onclick=()=>{const el=tm.total-(tm.running?Math.max(0,tm.endAt-Date.now()):tm.left);clearInterval(iv);if(tm.mode==='focus'&&el>=60000)logSession(el);lock(false);tm.startedAt=0;setMode(tm.mode==='focus'?'break':'focus');};
+$('presets').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.clear){T_cur=null;renderToday();paintTimer();paintBtns();return;}
+  if(b.dataset.pre){const p=PRE.find(x=>x[0]===+b.dataset.pre);S.set.focus=p[0];S.set.brk=p[1];$('fm').value=p[0];$('bm').value=p[1];save();if(!tm.running)setMode(tm.mode);else paintBtns();}});
+['fm','bm'].forEach(id=>$(id).addEventListener('change',()=>{const f=Math.max(1,Math.min(180,+$('fm').value||50)),b=Math.max(1,Math.min(60,+$('bm').value||10));S.set.focus=f;S.set.brk=b;save();if(!tm.running)setMode(tm.mode);else paintBtns();}));
+$('freeSubj').addEventListener('change',paintTimer);
+$('freeSubj').innerHTML=['DAA','DMDW','SE','CN','EE','DOS'].map(s=>'<option value="'+s+'">'+s+'</option>').join('');
+$('wipe').onclick=()=>{const b=$('wipe');if(b.dataset.arm){S={done:{},tp:{},pyq:{},conf:{},log:[],moved:{},slots:{},set:S.set,ts:0};save();b.dataset.arm='';b.textContent='Reset all progress';$('wipeNote').textContent='Progress cleared.';renderAll();}else{b.dataset.arm='1';b.textContent='Tap again to confirm';$('wipeNote').textContent='This clears ticks, confidence and focus history.';}};
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&tm.running)tick();});
+
+/* ---------- INIT ---------- */
+$('fm').value=S.set.focus;$('bm').value=S.set.brk;
+tm.total=tm.left=S.set.focus*60000;
+paintSync();renderAll();paintBtns();paintTimer();
+setInterval(()=>{if(midnight(new Date()).getTime()!==window.__d){window.__d=midnight(new Date()).getTime();renderHeader();}},60000);window.__d=midnight(new Date()).getTime();
+</script>
